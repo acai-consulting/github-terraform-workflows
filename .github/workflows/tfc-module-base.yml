@@ -128,7 +128,7 @@ jobs:
 
       - name: Run Terraform Docs
         id: docs
-        uses: terraform-docs/gh-actions@v1.0.0
+        uses: terraform-docs/gh-actions@v1.1.0
         with:
           working-dir: .
           recursive: ${{ steps.check_submodules.outputs.dir_exists }}
@@ -160,12 +160,12 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up TFLint
-        uses: terraform-linters/setup-tflint@v1
+        uses: terraform-linters/setup-tflint@v4
         with:
           tflint_version: ${{ inputs.tflint_version }}
 
       - name: Get TFLint Config
-        uses: terraform-linters/tflint-load-config-action@v1
+        uses: terraform-linters/tflint-load-config-action@v2
         with:
           source-repo: ${{ inputs.tflint_config_repo }}
           source-path: "terraform/tflint/${{ inputs.tflint_config_path }}"
