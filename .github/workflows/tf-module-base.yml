@@ -231,9 +231,9 @@ jobs:
     steps:
       - name: Use Outputs Steps
         run: |
-          echo "Fmt Status: ${{ steps.terraform_fmt.outputs.fmt_status }}"
-          echo "Fmt Diff Exists: ${{ steps.terraform_docs.outputs.fmt_diff_exists }}"
-          echo "Docs Status: ${{ steps.terraform_docs.outputs.docs_status }}"
-          echo "Docs Diff Exists: ${{ steps.terraform_docs.outputs.docs_diff_exists }}"
-          echo "Lint Status: ${{ steps.terraform_lint.outputs.lint_status }}"
-          echo "Trivy Status: ${{ steps.terraform_trivy.outputs.trivy_status }}"
+          echo "Fmt Status: ${{ jobs.terraform_fmt.outputs.fmt_status }}"
+          echo "Fmt Diff Exists: ${{ jobs.terraform_docs.outputs.fmt_diff_exists }}"
+          echo "Docs Status: ${{ jobs.terraform_docs.outputs.docs_status }}"
+          echo "Docs Diff Exists: ${{ jobs.terraform_docs.outputs.docs_diff_exists }}"
+          echo "Lint Status: ${{ jobs.terraform_lint.outputs.lint_status }}"
+          echo "Trivy Status: ${{ jobs.terraform_trivy.outputs.trivy_status }}"
