@@ -57,10 +57,10 @@ on:
       all_steps_passed:
         description: "All steps have passed"
         value: ${{
-          needs.terraform_fmt.outputs.diff_exists == 'false' &&
-          needs.terraform_docs.outputs.diff_exists == 'false' &&
-          needs.terraform_lint.outputs.lint_status == 'success' &&
-          needs.terraform_trivy.outputs.trivy_status == 'success'}}
+          steps.terraform_fmt.outputs.diff_exists == 'false' &&
+          steps.terraform_docs.outputs.diff_exists == 'false' &&
+          steps.terraform_lint.outputs.lint_status == 'success' &&
+          steps.terraform_trivy.outputs.trivy_status == 'success'}}
 
 # Ensures that only one workflow runs at a time
 concurrency: ${{ inputs.concurrency_group }}
@@ -232,8 +232,8 @@ jobs:
     steps:
       - name: Use Outputs from Reusable Workflow
         run: |
-          echo "Fmt Status: ${{ needs.terraform_fmt.outputs.fmt_status }}"
-          echo "Fmt Diff Exists: ${{ needs.terraform_docs.outputs.fmt_diff_exists }}"
-          echo "Docs Status: ${{ needs.terraform_docs.outputs.docs_status }}"
-          echo "Docs Diff Exists: ${{ needs.terraform_docs.outputs.docs_diff_exists }}"
-          echo "Lint Status: ${{ needs.terraform_lint.outputs.lint_status }}"
+          echo "Fmt Status: ${{ steps.terraform_fmt.outputs.fmt_status }}"
+          echo "Fmt Diff Exists: ${{ steps.terraform_docs.outputs.fmt_diff_exists }}"
+          echo "Docs Status: ${{ steps.terraform_docs.outputs.docs_status }}"
+          echo "Docs Diff Exists: ${{ steps.terraform_docs.outputs.docs_diff_exists }}"
+          echo "Lint Status: ${{ steps.terraform_lint.outputs.lint_status }}"
