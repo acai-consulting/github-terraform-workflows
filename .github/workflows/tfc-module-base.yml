@@ -165,7 +165,7 @@ jobs:
           tflint_version: ${{ inputs.tflint_version }}
 
       - name: Get TFLint Config
-        uses: terraform-linters/tflint-load-config-action@v1
+        uses: terraform-linters/tflint-load-config-action@v2
         with:
           source-repo: ${{ inputs.tflint_config_repo }}
           source-path: "terraform/tflint/${{ inputs.tflint_config_path }}"
