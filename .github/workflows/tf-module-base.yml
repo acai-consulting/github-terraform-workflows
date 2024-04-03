@@ -53,14 +53,6 @@ on:
         default: "latest"
         required: false
         type: string
-    outputs:
-      all_steps_passed:
-        description: "All steps have passed"
-        value: ${{
-          steps.terraform_fmt.outputs.diff_exists == 'false' &&
-          steps.terraform_docs.outputs.diff_exists == 'false' &&
-          steps.terraform_lint.outputs.lint_status == 'success' &&
-          steps.terraform_trivy.outputs.trivy_status == 'success'}}
 
 # Ensures that only one workflow runs at a time
 concurrency: ${{ inputs.concurrency_group }}
@@ -226,14 +218,20 @@ jobs:
           trivy_target: .
           trivy_version: ${{ inputs.trivy_version }}
 
-  consume_outputs:
-    needs: [terraform_fmt, terraform_docs, terraform_lint]
-    runs-on: ubuntu-latest
+  check_all_passed:
+    # This job will wait for all other jobs to finish and combine their statuses
+    needs: [terraform_fmt, terraform_docs, terraform_lint, terraform_trivy]
+    runs-on: ${{ inputs.runner_type }}
+    outputs:
+      all_steps_passed: ${{ 
+        steps.check.outputs.fmt_diff_exists == 'false' &&
+        steps.check.outputs.docs_diff_exists == 'false' &&
+        steps.check.outputs.lint_status == 'success' &&
+        steps.check.outputs.trivy_status == 'success'}}
     steps:
-      - name: Use Outputs from Reusable Workflow
+      - id: check
         run: |
-          echo "Fmt Status: ${{ steps.terraform_fmt.outputs.fmt_status }}"
-          echo "Fmt Diff Exists: ${{ steps.terraform_docs.outputs.fmt_diff_exists }}"
-          echo "Docs Status: ${{ steps.terraform_docs.outputs.docs_status }}"
-          echo "Docs Diff Exists: ${{ steps.terraform_docs.outputs.docs_diff_exists }}"
-          echo "Lint Status: ${{ steps.terraform_lint.outputs.lint_status }}"
+          echo "fmt_diff_exists=${{ needs.terraform_fmt.outputs.fmt_diff_exists }}" >> $GITHUB_ENV
+          echo "docs_diff_exists=${{ needs.terraform_docs.outputs.docs_diff_exists }}" >> $GITHUB_ENV
+          echo "lint_status=${{ needs.terraform_lint.outputs.lint_status }}" >> $GITHUB_ENV
+          echo "trivy_status=${{ needs.terraform_trivy.outputs.trivy_status }}" >> $GITHUB_ENV
