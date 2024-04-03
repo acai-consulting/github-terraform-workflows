@@ -54,11 +54,12 @@ on:
         required: false
         type: string
     outputs:
-      all_steps_passed: ${{ jobs.terraform_fmt.outputs.diff_exists == 'false' && 
-        jobs.terraform_docs.outputs.diff_exists == 'false' && 
-        jobs.terraform_lint.outputs.lint_status == 'success' && 
-        jobs.terraform_trivy.outputs.trivy_status == 'success' }}
-
+      all_steps_passed: 
+        description: "all_steps_passed"
+        value: ${{ jobs.terraform_fmt.outputs.diff_exists == 'false' && 
+          jobs.terraform_docs.outputs.diff_exists == 'false' && 
+          jobs.terraform_lint.outputs.lint_status == 'success' && 
+          jobs.terraform_trivy.outputs.trivy_status == 'success' }}
 
 # Ensures that only one workflow runs at a time
 concurrency: ${{ inputs.concurrency_group }}
