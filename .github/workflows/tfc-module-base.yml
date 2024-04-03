@@ -53,12 +53,20 @@ on:
         default: "latest"
         required: false
         type: string
+    outputs:
+      all_steps_passed:
+        description: "All steps have passed"
+        value: ${{
+          needs.terraform_fmt.outputs.diff_exists == 'false' &&
+          needs.terraform_docs.outputs.diff_exists == 'false' &&
+          needs.terraform_lint.outputs.lint_status == 'success' &&
+          needs.terraform_trivy.outputs.trivy_status == 'success'}}
 
 # Ensures that only one workflow runs at a time
 concurrency: ${{ inputs.concurrency_group }}
 
 jobs:
-  terraform-fmt:
+  terraform_fmt:
     runs-on: ${{ inputs.runner_type }}
     outputs:
       fmt_status: ${{ steps.fmt.outcome }}
@@ -78,7 +86,7 @@ jobs:
 
       - name: Output Terraform Version
         run: terraform version
-        
+
       - name: Terraform Format
         id: fmt
         run: terraform fmt -recursive
@@ -101,10 +109,10 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           branch: ${{ github.event.pull_request.head.ref }}
 
-  terraform-docs:
+  terraform_docs:
     needs:
-      - terraform-fmt
-    if: ${{ needs.terraform-fmt.outputs.diff_exists == 'false' }}
+      - terraform_fmt
+    if: ${{ needs.terraform_fmt.outputs.diff_exists == 'false' }}
     runs-on: ${{ inputs.runner_type }}
     outputs:
       docs_status: ${{ steps.docs.outcome }}
@@ -141,13 +149,13 @@ jobs:
           git-push-user-email: ${{ inputs.commit_email }}
           git-commit-message: "docs(terraform-docs): update readme"
 
-  terraform-lint:
+  terraform_lint:
     needs:
-      - terraform-fmt
-      - terraform-docs
+      - terraform_fmt
+      - terraform_docs
     if: >
-      needs.terraform-fmt.outputs.diff_exists == 'false' && 
-      needs.terraform-docs.outputs.diff_exists == 'false' 
+      needs.terraform_fmt.outputs.diff_exists == 'false' && 
+      needs.terraform_docs.outputs.diff_exists == 'false'
     runs-on: ${{ inputs.runner_type }}
     outputs:
       lint_status: ${{ steps.lint.outcome }}
@@ -181,17 +189,17 @@ jobs:
           reporter: github-pr-check
           fail_on_error: true
           filter_mode: nofilter
-          level: error       
+          level: error
           tflint_init: true
 
-  terraform-trivy:
+  terraform_trivy:
     needs:
-      - terraform-fmt
-      - terraform-docs
-      - terraform-lint
+      - terraform_fmt
+      - terraform_docs
+      - terraform_lint
     if: >
-      needs.terraform-fmt.outputs.diff_exists == 'false' && 
-      needs.terraform-docs.outputs.diff_exists == 'false'
+      needs.terraform_fmt.outputs.diff_exists == 'false' && 
+      needs.terraform_docs.outputs.diff_exists == 'false'
     runs-on: ${{ inputs.runner_type }}
     outputs:
       trivy_status: ${{ steps.trivy.outcome }}
@@ -217,3 +225,15 @@ jobs:
           trivy_command: config
           trivy_target: .
           trivy_version: ${{ inputs.trivy_version }}
+
+  consume_outputs:
+    needs: [terraform_fmt, terraform_docs, terraform_lint]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Use Outputs from Reusable Workflow
+        run: |
+          echo "Fmt Status: ${{ needs.terraform_fmt.outputs.fmt_status }}"
+          echo "Fmt Diff Exists: ${{ needs.terraform_docs.outputs.fmt_diff_exists }}"
+          echo "Docs Status: ${{ needs.terraform_docs.outputs.docs_status }}"
+          echo "Docs Diff Exists: ${{ needs.terraform_docs.outputs.docs_diff_exists }}"
+          echo "Lint Status: ${{ needs.terraform_lint.outputs.lint_status }}"
