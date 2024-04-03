@@ -74,7 +74,7 @@ on:
 concurrency: ${{ inputs.concurrency_group }}
 
 jobs:
-  terratest-config:
+  terratest_config:
     runs-on: ${{ inputs.runner_type }}
     outputs:
       matrix: ${{ steps.set_matrix.outputs.matrix }}
@@ -94,16 +94,16 @@ jobs:
           JSON=$(jq -r @json <<< cat terraform/terratest/${{ inputs.terratest_config_repo_path }})
           echo "matrix=$JSON" >> $GITHUB_OUTPUT
 
-  terratest-run:
+  terratest_run:
     needs:
-      - terratest-config
+      - terratest_config
     runs-on: ${{ inputs.runner_type }}
     outputs:
       terratest_status: ${{ steps.terratest_summary.outcome }}
 
     strategy:
       max-parallel: ${{ inputs.terratest_max_parallel }}
-      matrix: ${{ fromJson(needs.terratest-config.outputs.matrix) }}
+      matrix: ${{ fromJson(needs.terratest_config.outputs.matrix) }}
 
     steps:
       - name: Check GH_PEER_REPO_TOKEN
@@ -260,3 +260,15 @@ jobs:
       - name: Terratest Outcome
         if: ${{ steps.terratest_summary.outcome == 'failure' || steps.terratest_summary.outputs.exitcode == '1' }}
         run: exit 1
+
+
+  consume_outputs:
+    needs: [terratest_run]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Use Outputs Steps
+        run: |
+          echo '### Workflow Outputs Summary' >> $GITHUB_STEP_SUMMARY
+          echo '| Step | Status  |' >> $GITHUB_STEP_SUMMARY
+          echo '|---|---|' >> $GITHUB_STEP_SUMMARY
+          echo "| Terratest Run | ${{ needs.terratest_run.outputs.terratest_status  }} |" >> $GITHUB_STEP_SUMMARY
