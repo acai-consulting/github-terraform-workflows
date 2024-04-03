@@ -231,9 +231,10 @@ jobs:
     steps:
       - name: Use Outputs Steps
         run: |
-          echo "Fmt Status: ${{ needs.terraform_fmt.outputs.fmt_status }}"
-          echo "Fmt Diff Exists: ${{ needs.terraform_docs.outputs.fmt_diff_exists }}"
-          echo "Docs Status: ${{ needs.terraform_docs.outputs.docs_status }}"
-          echo "Docs Diff Exists: ${{ needs.terraform_docs.outputs.docs_diff_exists }}"
-          echo "Lint Status: ${{ needs.terraform_lint.outputs.lint_status }}"
-          echo "Trivy Status: ${{ needs.terraform_trivy.outputs.trivy_status }}"
+          echo '### Workflow Outputs Summary' >> $GITHUB_STEP_SUMMARY
+          echo '| Step | Status | Diff Exists |' >> $GITHUB_STEP_SUMMARY
+          echo '|---|---|---|' >> $GITHUB_STEP_SUMMARY
+          echo "| Terraform Format | ${{ needs.terraform_fmt.outputs.fmt_status }} | ${{ needs.terraform_fmt.outputs.fmt_diff_exists }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Terraform Docs | ${{ needs.terraform_docs.outputs.docs_status }} | ${{ needs.terraform_docs.outputs.docs_diff_exists }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Terraform Lint | ${{ needs.terraform_lint.outputs.lint_status }} | - |" >> $GITHUB_STEP_SUMMARY
+          echo "| Trivy Security Scan | ${{ needs.terraform_trivy.outputs.trivy_status }} | - |" >> $GITHUB_STEP_SUMMARY
