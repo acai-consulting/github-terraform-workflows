@@ -72,8 +72,7 @@ on:
     outputs: 
       all_steps_passed: 
         description: "all_steps_passed"
-        value: ${{ jobs.terratest_run.outputs.terratest_status == 'success ' }}
-
+        value: ${{ jobs.terratest_run.outputs.terratest_status == 'success' }}
 
 # Ensures that only one workflow runs at a time
 concurrency: ${{ inputs.concurrency_group }}
