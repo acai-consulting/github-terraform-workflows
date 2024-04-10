@@ -273,6 +273,15 @@ jobs:
         with:
           name: Checkov Test Results
           path: checkov-report.xml
+          reporter: junit
+          path-replace-backslashes: false
+          list-suites: all
+          list-tests: all
+          max-annotations: 10
+          fail-on-error: true
+          fail-on-empty: true
+          only-summary: false
+          token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Summarize Checkov Report
         id: checkov_summary
@@ -282,6 +291,7 @@ jobs:
             echo "::set-output name=checkov_status::success"
           else
             echo "::set-output name=checkov_status::failed"
+            exit 1
           fi
           
   consume_outputs:
