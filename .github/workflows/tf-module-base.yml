@@ -252,9 +252,11 @@ jobs:
           python-version: '3.x'
 
       - name: Install Checkov and Run with Console Output
-        uses: bridgecrewio/checkov-action@master
+        uses: bridgecrewio/checkov-action@v12
         with:
           framework: terraform
+          quiet: true
+          download_external_modules: true
 
       - name: Generate Checkov Report Summary Files
         run: |
