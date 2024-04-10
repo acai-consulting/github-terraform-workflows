@@ -59,7 +59,8 @@ on:
         value: ${{ jobs.terraform_fmt.outputs.diff_exists == 'false' && 
           jobs.terraform_docs.outputs.diff_exists == 'false' && 
           jobs.terraform_lint.outputs.lint_status == 'success' && 
-          jobs.terraform_trivy.outputs.trivy_status == 'success' }}
+          jobs.terraform_trivy.outputs.trivy_status == 'success'  && 
+          jobs.terraform_checkov.outputs.checkov_status == 'success' }}
 
 # Ensures that only one workflow runs at a time
 concurrency: ${{ inputs.concurrency_group }}
@@ -225,8 +226,61 @@ jobs:
           trivy_target: .
           trivy_version: ${{ inputs.trivy_version }}
 
+  terraform_checkov:
+    needs:
+      - terraform_fmt
+      - terraform_docs
+      - terraform_lint
+      - terraform_trivy
+    if: >
+      needs.terraform_fmt.outputs.diff_exists == 'false' && 
+      needs.terraform_docs.outputs.diff_exists == 'false'
+    runs-on: ${{ inputs.runner_type }}
+    outputs:
+      checkov_status : ${{ steps.checkov_summary.outputs.checkov_status }}
+
+    steps:
+      - name: Checkout main repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install Checkov and Run with Console and XML Output
+        uses: bridgecrewio/checkov-action@v12
+        with:
+          framework: terraform
+          quiet: true
+          download_external_modules: true
+          output_format: cli, junitxml
+          output_file_path: console,checkov-report.xml # folder and name of results file
+
+      - name: Publish Checkov Test Results
+        uses: dorny/test-reporter@v1.9.0
+        with:
+          name: Checkov Test Results
+          path: ./checkov-report.xml
+          reporter: java-junit
+          list-suites: all
+          list-tests: failed
+          max-annotations: 10
+          only-summary: false
+
+      - name: Summarize Checkov Report
+        id: checkov_summary
+        run: |
+          sudo apt-get update && sudo apt-get install -y libxml2-utils
+          CHECKOV_FAILED=$(xmllint --xpath 'string(//testsuites/@failures)' checkov-report.xml)
+          echo "Failed checks: $CHECKOV_FAILED"
+          if [[ "$CHECKOV_FAILED" == "0" ]]; then
+            echo "checkov_status=success" >> $GITHUB_ENV
+          else
+            echo "checkov_status=failed" >> $GITHUB_ENV
+            exit 1
+          fi          
+
   consume_outputs:
-    needs: [terraform_fmt, terraform_docs, terraform_lint, terraform_trivy]
+    needs: [terraform_fmt, terraform_docs, terraform_lint, terraform_trivy, terraform_checkov]
     runs-on: ubuntu-latest
     steps:
       - name: Use Outputs Steps
@@ -238,3 +292,4 @@ jobs:
           echo "| Terraform Docs | ${{ needs.terraform_docs.outputs.docs_status }} | ${{ needs.terraform_docs.outputs.docs_diff_exists }} |" >> $GITHUB_STEP_SUMMARY
           echo "| Terraform Lint | ${{ needs.terraform_lint.outputs.lint_status }} | - |" >> $GITHUB_STEP_SUMMARY
           echo "| Trivy Security Scan | ${{ needs.terraform_trivy.outputs.trivy_status }} | - |" >> $GITHUB_STEP_SUMMARY
+          echo "| Checkov Scan | ${{ needs.terraform_checkov.outputs.checkov_status }} | - |" >> $GITHUB_STEP_SUMMARY
