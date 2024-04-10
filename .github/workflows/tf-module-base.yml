@@ -53,6 +53,11 @@ on:
         default: "latest"
         required: false
         type: string
+      checkov_fails_abort:
+        description: "Whether to abort the workflow if Checkov checks fail"
+        required: false
+        default: "true"
+        type: boolean        
     outputs:
       all_steps_passed: 
         description: "all_steps_passed"
@@ -60,7 +65,8 @@ on:
           jobs.terraform_docs.outputs.diff_exists == 'false' && 
           jobs.terraform_lint.outputs.lint_status == 'success' && 
           jobs.terraform_trivy.outputs.trivy_status == 'success'  && 
-          jobs.terraform_checkov.outputs.checkov_status == 'success' }}
+          (needs.terraform_checkov.outputs.checkov_status == 'success' || 
+          inputs.checkov_fails_abort == 'false') }}
 
 # Ensures that only one workflow runs at a time
 concurrency: ${{ inputs.concurrency_group }}
