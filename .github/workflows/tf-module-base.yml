@@ -267,20 +267,12 @@ jobs:
           echo "$CHECKOV_SUMMARY" >> $GITHUB_STEP_SUMMARY
           echo "$CHECKOV_SUMMARY" 
 
-      - name: Upload Checkov Test Results
-        uses: actions/upload-artifact@v2
-        with:
-          name: checkov-report
-          path: checkov-report.xml
-
       - name: Publish Checkov Test Results
         uses: dorny/test-reporter@v1
         if: always() # This makes sure the step runs even if the previous steps failed
         with:
           name: Checkov Test Results
           path: checkov-report.xml
-          reporter: junit
-          # Additional configuration options can be set here
 
       - name: Summarize Checkov Report
         id: checkov_summary
