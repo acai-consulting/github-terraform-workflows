@@ -252,10 +252,9 @@ jobs:
           python-version: '3.x'
 
       - name: Install Checkov and Run with Console Output
-        id: checkov_scan
-        run: |
-          pip install checkov /dev/null 2>&1
-          checkov -d . --framework terraform
+        uses: bridgecrewio/checkov-action@master
+        with:
+          framework: terraform
 
       - name: Generate Checkov Report Summary Files
         run: |
