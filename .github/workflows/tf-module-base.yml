@@ -56,7 +56,7 @@ on:
       checkov_fails_abort:
         description: "Whether to abort the workflow if Checkov checks fail"
         required: false
-        default: "true"
+        default: true
         type: boolean        
     outputs:
       all_steps_passed: 
