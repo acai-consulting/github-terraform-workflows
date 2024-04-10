@@ -255,7 +255,6 @@ jobs:
           output_format: cli, junitxml
           output_file_path: console,checkov-report.xml # folder and name of results file
 
-
       - name: Publish Checkov Test Results
         uses: dorny/test-reporter@v1.9.0
         with:
@@ -270,14 +269,15 @@ jobs:
       - name: Summarize Checkov Report
         id: checkov_summary
         run: |
-          CHECKOV_FAILED=$(jq '.summary.failed' checkov-report.json)
-          if [[ "$CHECKOV_FAILED" == "0" ]]; then
-            echo "::set-output name=checkov_status::success"
-          else
-            echo "::set-output name=checkov_status::failed"
-            exit 1
-          fi
-          
+          CHECKOV_FAILED=$(xmllint --xpath 'string(//testsuites/@failures)' checkov-report.xml)
+            echo "Failed checks: $CHECKOV_FAILED"
+            if [[ "$CHECKOV_FAILED" == "0" ]]; then
+              echo "checkov_status=success" >> $GITHUB_ENV
+            else
+              echo "checkov_status=failed" >> $GITHUB_ENV
+              exit 1
+            fi          
+            
   consume_outputs:
     needs: [terraform_fmt, terraform_docs, terraform_lint, terraform_trivy, terraform_checkov]
     runs-on: ubuntu-latest
