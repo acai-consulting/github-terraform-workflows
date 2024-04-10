@@ -246,11 +246,13 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Test with Checkov
-        id: checkov
-        uses: bridgecrewio/checkov-action@master
+      - name: Setup Python
+        uses: actions/setup-python@v2
         with:
-          framework: terraform 
+          python-version: '3.x'
+
+      - name: Install Checkov
+        run: pip install checkov
 
       - name: Run Checkov and Generate Report
         run: checkov -d . --framework terraform --output json > checkov-report.json
