@@ -261,9 +261,15 @@ jobs:
       - name: Generate Checkov Report Summary Files
         run: |
           # Process the Checkov JSON report to extract summary information
-          checkov -d . --framework terraform --output json | tee > checkov-report.json
+          sudo apt-get install -y libxml2-utils
           checkov -d . --framework terraform --output junitxml > checkov-report.xml
-          CHECKOV_SUMMARY=$(jq -r '"**Checkov Scan Results**\nTotal Passed: \(.summary.passed)\nTotal Failed: \(.summary.failed)\nTotal Skipped: \(.summary.skipped)\n" + if .summary.failed > 0 then "See [Checkov Report](./artifacts)" else "" end' checkov-report.json)
+          TOTAL_TESTS=$(xmllint --xpath "string(//testsuites/@tests)" checkov-report.xml)
+          TOTAL_FAILED=$(xmllint --xpath "string(//testsuites/@failures)" checkov-report.xml)
+          TOTAL_SKIPPED=$(xmllint --xpath "string(//testsuites/@skipped)" checkov-report.xml)
+
+          # Generating summary
+          CHECKOV_SUMMARY="**Checkov Scan Results**\nTotal Tests: $TOTAL_TESTS\nTotal Failed: $TOTAL_FAILED\nTotal Skipped: $TOTAL_SKIPPED\n"
+          
           # Append the summary to the GitHub Actions run summary
           echo "$CHECKOV_SUMMARY" >> $GITHUB_STEP_SUMMARY
           echo "$CHECKOV_SUMMARY" 
