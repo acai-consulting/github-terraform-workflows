@@ -272,14 +272,11 @@ jobs:
         if: always() # This makes sure the step runs even if the previous steps failed
         with:
           name: Checkov Test Results
-          path: checkov-report.xml
+          artifact: checkov-report.xml
           reporter: junit
-          path-replace-backslashes: false
           list-suites: all
           list-tests: all
           max-annotations: 10
-          fail-on-error: true
-          fail-on-empty: true
           only-summary: false
           token: ${{ secrets.GITHUB_TOKEN }}
 
