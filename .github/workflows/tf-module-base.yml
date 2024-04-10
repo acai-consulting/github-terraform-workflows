@@ -261,12 +261,20 @@ jobs:
         id: checkov_summary
         run: |
           CHECKOV_FAILED=$(jq '.summary.failed' checkov-report.json)
+          CHECKOV_REPORT_SUMMARY=$(jq -r '.summary | tojson' checkov-report.json) # Serialize summary to a string
+          echo "::set-output name=checkov_report_summary::$CHECKOV_REPORT_SUMMARY"
           if [[ "$CHECKOV_FAILED" == "0" ]]; then
             echo "::set-output name=checkov_status::success"
           else
             echo "::set-output name=checkov_status::failed"
           fi
 
+      - name: Upload Checkov Report as Artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: checkov-report
+          path: checkov-report.json
+          
   consume_outputs:
     needs: [terraform_fmt, terraform_docs, terraform_lint, terraform_trivy, terraform_checkov]
     runs-on: ubuntu-latest
