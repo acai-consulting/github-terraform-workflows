@@ -275,14 +275,12 @@ jobs:
 
       - name: Publish Checkov Test Results
         uses: dorny/test-reporter@v1.9.0
-        if: always() # This makes sure the step runs even if the previous steps failed
         with:
           name: Checkov Test Results
           path: ./checkov-report.xml
           reporter: java-junit
           list-suites: all
-          list-tests: all
-          fail-on-error: true
+          list-tests: failed
           max-annotations: 10
           only-summary: false
 
