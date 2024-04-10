@@ -66,7 +66,7 @@ on:
           jobs.terraform_lint.outputs.lint_status == 'success' && 
           jobs.terraform_trivy.outputs.trivy_status == 'success'  && 
           (jobs.terraform_checkov.outputs.checkov_status == 'success' || 
-          inputs.checkov_failures_allow == 'true') }}
+          inputs.checkov_failures_allow == true) }}
 
 # Ensures that only one workflow runs at a time
 concurrency: ${{ inputs.concurrency_group }}
