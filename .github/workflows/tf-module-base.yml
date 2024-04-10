@@ -267,15 +267,22 @@ jobs:
           echo "$CHECKOV_SUMMARY" >> $GITHUB_STEP_SUMMARY
           echo "$CHECKOV_SUMMARY" 
 
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: checkov-report.xml
+          path: checkov-report.xml
+
       - name: Publish Checkov Test Results
-        uses: dorny/test-reporter@v1
+        uses: dorny/test-reporter@v1.9.0
         if: always() # This makes sure the step runs even if the previous steps failed
         with:
           name: Checkov Test Results
-          artifact: checkov-report.xml
+          path: checkov-report.xml
           reporter: junit
           list-suites: all
           list-tests: all
+          fail-on-error: true
           max-annotations: 10
           only-summary: false
           token: ${{ secrets.GITHUB_TOKEN }}
