@@ -284,8 +284,13 @@ jobs:
           if [[ "$CHECKOV_FAILED" == "0" ]]; then
             echo "checkov_status=success" >> $GITHUB_OUTPUT
           else
-            echo "checkov_status=failed" >> $GITHUB_OUTPUT
-            exit 1
+            if [[ "${{ inputs.checkov_failures_allow }}" == "false" ]]; then
+              echo "checkov_status=failed" >> $GITHUB_OUTPUT
+              exit 1
+            else
+              echo "checkov_status=success" >> $GITHUB_OUTPUT
+              echo "Note: Checkov checks failed or warnings are present, but proceeding due to checkov_fails_abort being set to false."
+            fi
           fi     
 
   consume_outputs:
