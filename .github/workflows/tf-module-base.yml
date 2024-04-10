@@ -251,17 +251,17 @@ jobs:
         with:
           python-version: '3.x'
 
-      - name: Run Checkov and Generate Report
+      - name: Install Checkov and Run with Console Output
         id: checkov_scan
         run: |
-          pip install checkov
-          checkov -d . --framework terraform --output json | tee > checkov-report.json
-          cat checkov-report.json
-          checkov -d . --framework terraform --output junitxml > checkov-report.xml
+          pip install checkov /dev/null 2>&1
+          checkov -d . --framework terraform
 
-      - name: Generate Checkov Report Summary
+      - name: Generate Checkov Report Summary Files
         run: |
           # Process the Checkov JSON report to extract summary information
+          checkov -d . --framework terraform --output json | tee > checkov-report.json
+          checkov -d . --framework terraform --output junitxml > checkov-report.xml
           CHECKOV_SUMMARY=$(jq -r '"**Checkov Scan Results**\nTotal Passed: \(.summary.passed)\nTotal Failed: \(.summary.failed)\nTotal Skipped: \(.summary.skipped)\n" + if .summary.failed > 0 then "See [Checkov Report](./artifacts)" else "" end' checkov-report.json)
           # Append the summary to the GitHub Actions run summary
           echo "$CHECKOV_SUMMARY" >> $GITHUB_STEP_SUMMARY
