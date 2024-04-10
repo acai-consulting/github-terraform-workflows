@@ -65,7 +65,7 @@ on:
           jobs.terraform_docs.outputs.diff_exists == 'false' && 
           jobs.terraform_lint.outputs.lint_status == 'success' && 
           jobs.terraform_trivy.outputs.trivy_status == 'success'  && 
-          (needs.terraform_checkov.outputs.checkov_status == 'success' || 
+          (jobs.terraform_checkov.outputs.checkov_status == 'success' || 
           inputs.checkov_fails_abort == 'false') }}
 
 # Ensures that only one workflow runs at a time
