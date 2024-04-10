@@ -53,10 +53,10 @@ on:
         default: "latest"
         required: false
         type: string
-      checkov_fails_abort:
+      checkov_failures_allow:
         description: "Whether to abort the workflow if Checkov checks fail"
         required: false
-        default: true
+        default: false
         type: boolean        
     outputs:
       all_steps_passed: 
@@ -66,7 +66,7 @@ on:
           jobs.terraform_lint.outputs.lint_status == 'success' && 
           jobs.terraform_trivy.outputs.trivy_status == 'success'  && 
           (jobs.terraform_checkov.outputs.checkov_status == 'success' || 
-          inputs.checkov_fails_abort == 'false') }}
+          inputs.checkov_failures_allow == 'true') }}
 
 # Ensures that only one workflow runs at a time
 concurrency: ${{ inputs.concurrency_group }}
@@ -257,6 +257,7 @@ jobs:
         with:
           framework: terraform
           quiet: true
+          soft_fail: ${{ inputs.checkov_failures_allow }}
           download_external_modules: true
           output_format: cli, junitxml
           output_file_path: console,checkov-report.xml # folder and name of results file
