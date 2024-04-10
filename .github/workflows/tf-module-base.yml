@@ -255,9 +255,9 @@ jobs:
         id: checkov_scan
         run: |
           pip install checkov
-          checkov -d . --framework terraform --output junitxml > checkov-report.xml
-          checkov -d . --framework terraform --output json > checkov-report.json
+          checkov -d . --framework terraform --output json | tee > checkov-report.json
           cat checkov-report.json
+          checkov -d . --framework terraform --output junitxml > checkov-report.xml
 
       - name: Generate Checkov Report Summary
         run: |
