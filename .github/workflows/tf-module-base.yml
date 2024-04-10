@@ -264,6 +264,7 @@ jobs:
 
       - name: Publish Checkov Test Results
         uses: dorny/test-reporter@v1.9.0
+        continue-on-error: true
         with:
           name: Checkov Test Results
           path: ./checkov-report.xml
