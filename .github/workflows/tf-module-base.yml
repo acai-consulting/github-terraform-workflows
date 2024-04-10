@@ -246,30 +246,15 @@ jobs:
           ref: ${{ github.event.pull_request.head.ref }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Setup Python
-        uses: actions/setup-python@v2
-        with:
-          python-version: '3.x'
-
-      - name: Install Checkov and Run with Console Output
+      - name: Install Checkov and Run with Console and XML Output
         uses: bridgecrewio/checkov-action@v12
         with:
           framework: terraform
           quiet: true
           download_external_modules: true
+          output_format: cli, junitxml
+          output_file_path: console,checkov-report.xml # folder and name of results file
 
-      - name: Run with XML Output
-        uses: bridgecrewio/checkov-action@v12
-        with:
-          framework: terraform
-          quiet: true
-          download_external_modules: true
-          output_format: junitxml
-          output_file_path: ./checkov-report.xml # folder and name of results file
-
-      - name: Generate Checkov XML Report
-        run: |
-          checkov -d . --framework terraform --output junitxml > checkov-report.xml
 
       - name: Publish Checkov Test Results
         uses: dorny/test-reporter@v1.9.0
