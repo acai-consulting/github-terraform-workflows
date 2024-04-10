@@ -267,12 +267,6 @@ jobs:
           echo "$CHECKOV_SUMMARY" >> $GITHUB_STEP_SUMMARY
           echo "$CHECKOV_SUMMARY" 
 
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: checkov-report.xml
-          path: .
-
       - name: Publish Checkov Test Results
         uses: dorny/test-reporter@v1.9.0
         with:
