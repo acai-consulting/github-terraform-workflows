@@ -273,11 +273,11 @@ jobs:
           CHECKOV_FAILED=$(xmllint --xpath 'string(//testsuites/@failures)' checkov-report.xml)
           echo "Failed checks: $CHECKOV_FAILED"
           if [[ "$CHECKOV_FAILED" == "0" ]]; then
-            echo "checkov_status=success" >> $GITHUB_ENV
+            echo "checkov_status=success" >> $GITHUB_OUTPUT
           else
-            echo "checkov_status=failed" >> $GITHUB_ENV
+            echo "checkov_status=failed" >> $GITHUB_OUTPUT
             exit 1
-          fi          
+          fi     
 
   consume_outputs:
     needs: [terraform_fmt, terraform_docs, terraform_lint, terraform_trivy, terraform_checkov]
