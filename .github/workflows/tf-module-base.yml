@@ -255,7 +255,9 @@ jobs:
         id: checkov_scan
         run: |
           pip install checkov
+          checkov -d . --framework terraform --output junitxml > checkov-report.xml
           checkov -d . --framework terraform --output json > checkov-report.json
+          cat checkov-report.json
 
       - name: Generate Checkov Report Summary
         run: |
@@ -265,12 +267,20 @@ jobs:
           echo "$CHECKOV_SUMMARY" >> $GITHUB_STEP_SUMMARY
           echo "$CHECKOV_SUMMARY" 
 
+      - name: Upload Checkov Test Results
+        uses: actions/upload-artifact@v2
+        with:
+          name: checkov-report
+          path: checkov-report.xml
 
-      - name: Summarize Checkov Report for Workflow Summary
-        run: |
-          # Assuming you've already generated `checkov-report.json` in a previous step
-          CHECKOV_SUMMARY=$(jq -r '"#### Checkov Report Summary\nFailed: \(.summary.failed)\nPassed: \(.summary.passed)\nSkipped: \(.summary.skipped)"' checkov-report.json)
-          echo "$CHECKOV_SUMMARY" >> $GITHUB_STEP_SUMMARY
+      - name: Publish Checkov Test Results
+        uses: dorny/test-reporter@v1
+        if: always() # This makes sure the step runs even if the previous steps failed
+        with:
+          name: Checkov Test Results
+          path: checkov-report.xml
+          reporter: junit
+          # Additional configuration options can be set here
 
       - name: Summarize Checkov Report
         id: checkov_summary
