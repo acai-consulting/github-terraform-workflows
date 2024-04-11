@@ -95,7 +95,12 @@ jobs:
           mkdir -p .github/semantic-release
           rm -rf .github/external-workflow-configs/semantic-release/.git 
           cp -r .github/external-workflow-configs/semantic-release/* .
-
+          if [ -f release-commit-main-tf.sh ]; then
+            chmod +x release-commit-main-tf.sh
+          else
+            echo "release-commit-main-tf.sh does not exist, skipping chmod."
+          fi
+          
       - uses: actions/setup-node@v4
         with:
           node-version: '20'
