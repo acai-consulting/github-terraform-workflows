@@ -1,0 +1,135 @@
+name: Terraform Module Base Lite CI/CD Pipeline
+
+on:
+  workflow_call:
+    inputs:
+      concurrency_group:
+        description: "Name of concurrency group to manage concurrent github action runs"
+        default: ${{ github.repository }}/${{ github.event.pull_request.head.ref || github.ref }}
+        required: false
+        type: string
+      runner_type:
+        description: "Type of runner (GitHub-hosted or self-hosted)"
+        required: false
+        default: "ubuntu-latest"
+        type: string
+      terraform_version:
+        description: "Terraform version used for Fmt"
+        default: "latest"
+        required: false
+        type: string
+      commit_user:
+        description: "Username which should be used for commits by github action"
+        default: "github-actions"
+        required: false
+        type: string
+      commit_email:
+        description: "Email which should be used for commits by github action"
+        default: "noreply@github.com"
+        required: false
+        type: string
+    outputs:
+      all_steps_passed: 
+        description: "all_steps_passed"
+        value: ${{ jobs.terraform_fmt.outputs.diff_exists == 'false' && 
+          jobs.terraform_docs.outputs.diff_exists == 'false' && 
+
+# Ensures that only one workflow runs at a time
+concurrency: ${{ inputs.concurrency_group }}
+
+jobs:
+  terraform_fmt:
+    runs-on: ${{ inputs.runner_type }}
+    outputs:
+      fmt_status: ${{ steps.fmt.outcome }}
+      diff_exists: ${{ steps.fmt_commit.outputs.diff }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ inputs.terraform_version }}
+
+      - name: Output Terraform Version
+        run: terraform version
+
+      - name: Terraform Format
+        id: fmt
+        run: terraform fmt -recursive
+
+      - name: Commit Changes
+        id: fmt_commit
+        run: |
+          git config --local user.name "${{ inputs.commit_user }}"
+          git config --local user.email "${{ inputs.commit_email }}"
+          if [[ -z $(git status -s) ]]; then
+              echo "diff=false" >> $GITHUB_OUTPUT
+          else
+              echo "diff=true" >> $GITHUB_OUTPUT
+          fi
+          git diff-index --quiet HEAD || git commit -m "style(terraform fmt): format code" -a
+
+      - name: Push Changes
+        uses: ad-m/github-push-action@v0.8.0
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ github.event.pull_request.head.ref }}
+
+  terraform_docs:
+    needs:
+      - terraform_fmt
+    if: ${{ needs.terraform_fmt.outputs.diff_exists == 'false' }}
+    runs-on: ${{ inputs.runner_type }}
+    outputs:
+      docs_status: ${{ steps.docs.outcome }}
+      diff_exists: ${{ steps.docs.outputs.num_changed > 0 }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Check For Submodules
+        id: check_submodules
+        run: |
+          if [[ -d "./modules" ]]; then
+              echo "dir_exists=true" >> $GITHUB_OUTPUT
+          else
+              echo "dir_exists=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Run Terraform Docs
+        id: docs
+        uses: terraform-docs/gh-actions@v1.1.0
+        with:
+          working-dir: .
+          recursive: ${{ steps.check_submodules.outputs.dir_exists }}
+          recursive-path: modules
+          output-file: README.md
+          output-method: inject
+          args: --sort-by required
+          git-push: true
+          git-push-user-name: ${{ inputs.commit_user }}
+          git-push-user-email: ${{ inputs.commit_email }}
+          git-commit-message: "docs(terraform-docs): update readme"
+
+
+  consume_outputs:
+    needs: [terraform_fmt, terraform_docs]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Use Outputs Steps
+        run: |
+          echo '### Workflow Outputs Summary' >> $GITHUB_STEP_SUMMARY
+          echo '| Step | Status | Diff Exists |' >> $GITHUB_STEP_SUMMARY
+          echo '|---|---|---|' >> $GITHUB_STEP_SUMMARY
+          echo "| Terraform Format | ${{ needs.terraform_fmt.outputs.fmt_status }} | ${{ needs.terraform_fmt.outputs.fmt_diff_exists }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Terraform Docs | ${{ needs.terraform_docs.outputs.docs_status }} | ${{ needs.terraform_docs.outputs.docs_diff_exists }} |" >> $GITHUB_STEP_SUMMARY
