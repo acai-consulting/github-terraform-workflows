@@ -114,9 +114,9 @@ jobs:
         id: check_token
         run: |
           if [ -n "${{ secrets.GH_PEER_REPO_TOKEN }}" ]; then
-            echo "::set-output name=token_present::true"
+            echo "token_present=true" >> $GITHUB_OUTPUT
           else
-            echo "::set-output name=token_present::false"
+            echo "token_present=false" >> $GITHUB_OUTPUT
           fi
 
       - name: Set Git Access Token
@@ -132,6 +132,35 @@ jobs:
 
       - name: Setup Go
         uses: actions/setup-go@v5
+
+      - name: Verify Repository Structure
+        run: |
+          echo "Repository structure:"
+          find . -type d -maxdepth 3 -not -path "*/\.*" | sort
+          
+          echo "Checking for ${{ inputs.terratest_path }} directory..."
+          if [ -d "${{ inputs.terratest_path }}" ]; then
+            echo "✅ ${{ inputs.terratest_path }} directory exists"
+          else
+            echo "❌ ${{ inputs.terratest_path }} directory not found"
+            exit 1
+          fi
+          
+          echo "Checking for examples directory..."
+          if [ -d "examples" ]; then
+            echo "✅ examples directory exists"
+          else
+            echo "❌ examples directory not found - creating it"
+            mkdir -p examples/complete
+          fi
+          
+          echo "Checking for examples/complete directory..."
+          if [ -d "examples/complete" ]; then
+            echo "✅ examples/complete directory exists"
+          else
+            echo "❌ examples/complete directory not found - creating it"
+            mkdir -p examples/complete
+          fi
 
       - name: Get Dependencies
         working-directory: ${{ inputs.terratest_path }}
@@ -151,18 +180,26 @@ jobs:
       - name: Output Terraform Version
         run: terraform version
         
-      - name: Change Directory Dynamically
+      - name: Ensure Examples Directory is Correctly Linked
         run: |
-          # Count the number of folders in terratest_path (e.g. "test/terratest" → 2 folders)
-          LEVELS=$(echo "${{ inputs.terratest_path }}" | awk -F"/" '{print NF}')
-          RELATIVE=""
-          # Append '../' for each folder level
-          for (( i=0; i<$LEVELS; i++ )); do
-            RELATIVE+="../"
-          done
-          # Now change directory to the computed relative path plus "examples/complete"
-          cd "${RELATIVE}examples/complete"
-          echo "Changed directory to: $(pwd)"
+          # Create examples/complete directory if it doesn't exist
+          mkdir -p examples/complete
+          
+          # Check if we need to create a symbolic link for the examples directory
+          # This ensures ../examples/complete is accessible from the test/terratest directory
+          if [ ! -d "${{ inputs.terratest_path }}/../examples" ]; then
+            echo "Creating symbolic link from $(pwd)/examples to ${{ inputs.terratest_path }}/../examples"
+            ln -s $(pwd)/examples ${{ inputs.terratest_path }}/../examples
+          fi
+          
+          # Verify the link works by checking from the test/terratest directory
+          cd ${{ inputs.terratest_path }}
+          if [ -d "../examples/complete" ]; then
+            echo "✅ ../examples/complete is accessible from $(pwd)"
+          else
+            echo "❌ ../examples/complete is not accessible from $(pwd)"
+            exit 1
+          fi
           
       - name: Generate Terraform Lock File
         if: ${{ matrix.provider_version != '' }}
@@ -178,7 +215,8 @@ jobs:
             touch "$d/.terraform.lock.hcl"
             # get required provider versions from matrix json
             for provider in $(jq -r 'keys | .[]' <<< $PROVIDER_JSON); do
-              version=$(jq -r ".[$k]" <<< $PROVIDER_JSON)
+              # Fix: use provider instead of $k which was undefined
+              version=$(jq -r ".[\"$provider\"]" <<< $PROVIDER_JSON)
               # get provider version if contains X from terraform registry
               if [[ "$version" == *"X"* ]]; then
                 for i in $(curl -s https://registry.terraform.io/v1/providers/$provider | jq -r '.versions' | jq 'reverse' | jq '.[]'); do
