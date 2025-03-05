@@ -150,7 +150,20 @@ jobs:
 
       - name: Output Terraform Version
         run: terraform version
-
+        
+      - name: Change Directory Dynamically
+        run: |
+          # Count the number of folders in terratest_path (e.g. "test/terratest" → 2 folders)
+          LEVELS=$(echo "${{ inputs.terratest_path }}" | awk -F"/" '{print NF}')
+          RELATIVE=""
+          # Append '../' for each folder level
+          for (( i=0; i<$LEVELS; i++ )); do
+            RELATIVE+="../"
+          done
+          # Now change directory to the computed relative path plus "examples/complete"
+          cd "${RELATIVE}examples/complete"
+          echo "Changed directory to: $(pwd)"
+          
       - name: Generate Terraform Lock File
         if: ${{ matrix.provider_version != '' }}
         id: terraform_lock_file
