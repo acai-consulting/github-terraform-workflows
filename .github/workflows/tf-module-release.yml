@@ -8,6 +8,11 @@ on:
         default: 'ubuntu-latest'
         required: false
         type: string
+      skip_version_injection_folder_prefix:
+        description: 'Comma-separated list of folder prefixes to exclude from version injection'
+        default: ''
+        required: false
+        type: string
       toggle_branch_protection:
         description: 'Temporary disable branch protection to allow release action to push updates to changelog'
         default: true
@@ -107,6 +112,7 @@ jobs:
           npx semantic-release
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SKIP_VERSION_INJECTION_FOLDER_PREFIX: ${{ inputs.skip_version_injection_folder_prefix }}
 
       - name: Enable Branch Protection
         if: ${{ always() && inputs.toggle_branch_protection && steps.get_branch_protection.outputs.status == '200' }}
